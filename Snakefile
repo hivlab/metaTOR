@@ -53,7 +53,7 @@ rule mag_pipeline:
         profile=["singularity"],
     handover: True
     wrapper:
-        "0.74.0/utils/nextflow"
+        "https://raw.githubusercontent.com/hivlab/snakemake-wrappers/nf-profile/utils/nextflow"
 
 
 rule metator:
