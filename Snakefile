@@ -1,3 +1,6 @@
+from snakemake.utils import min_version
+min_version("6.2")
+
 
 FASTQ=["SRR13435231"]
 
