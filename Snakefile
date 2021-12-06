@@ -1,11 +1,9 @@
 
 FASTQ=["SRR13435231"]
 
-# Wrappers Github repo: https://github.com/avilab/virome-wrappers
-WRAPPER_PREFIX = "https://raw.githubusercontent.com/avilab/virome-wrappers"
 
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "output/{accession}/contigs_fixed.fa", "output/{accession}/metator"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "Assembly/MEGAHIT/{accession}.contigs.fa.gz", "output/{accession}/metator"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
@@ -24,49 +22,41 @@ rule get_fastq_pe_gz:
     wrapper:
         "0.80.2/bio/sra-tools/fasterq-dump"
 
-rule assembly:
+
+rule sample_sheet:
     input:
-        pe1 = "reads/{accession}_1.fastq.gz",
-        pe2 = "reads/{accession}_2.fastq.gz",
+        "reads/{accession}_1.fastq.gz",
+        "reads/{accession}_2.fastq.gz",
     output:
-        contigs="output/{accession}/final.contigs.fa",
+        "output/{accession}.csv"
     params:
-        extra=(
-            lambda wildcards, resources: f"--presets meta-large --min-contig-len 1000 --verbose -m {resources.mem_mb * 1048576}"
-        ),
-    threads: 8
-    log:
-        "logs/{accession}_assembly.log",
-    shadow:
-        "minimal"
-    resources:
-        runtime=lambda wildcards, input: round(2600 + 0.06 * input.size_mb),
-        mem_mb=lambda wildcards, input: round(20000 + 2.22 * input.size_mb),
+        acc=lambda wildcards: wildcards.accession
+    shell:
+        """
+        echo 'sample,group,short_reads_1,short_reads_2,long_reads' >> {output}
+        echo '{params.acc},0,{input[0]},{input[1]},' >> {output}
+        """
+
+
+rule mag_pipeline:
+    input:
+        input="output/{accession}.csv",
+    output:
+        "Assembly/MEGAHIT/{accession}.contigs.fa.gz",
+    params:
+        pipeline="nf-core/mag",
+        revision="2.1.1",
+        profile=["singularity"],
+    handover: True
     wrapper:
-        f"{WRAPPER_PREFIX}/v0.8.0/assembly/megahit"
-
-
-rule fix_fasta:
-    input:
-        rules.assembly.output.contigs,
-    output:
-        "output/{accession}/contigs_fixed.fa",
-    params:
-        lambda wildcards: wildcards.accession,
-    conda:
-        f"{WRAPPER_PREFIX}/v0.8.0/subset_fasta/environment.yaml"
-    resources:
-        mem_mb=4000,
-        runtime=120,
-    script:
-        "https://raw.githubusercontent.com/hivlab/discover-virome/master/scripts/fix_fasta.py"
+        "0.74.0/utils/nextflow"
 
 
 rule metator:
     input:
         "reads/{accession}_1.fastq.gz",
         "reads/{accession}_2.fastq.gz",
-        "output/{accession}/contigs_fixed.fa",
+        "Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
         directory("output/{accession}/metator"),
     container:
