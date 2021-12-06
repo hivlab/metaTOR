@@ -5,6 +5,7 @@ min_version("6.2")
 FASTQ=["SRR13435231"]
 
 
+localrules: all, sample_sheet
 rule all:
     input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "Assembly/MEGAHIT/{accession}.contigs.fa.gz", "output/{accession}/metator"], accession=FASTQ)
 
