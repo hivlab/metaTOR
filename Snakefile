@@ -59,14 +59,14 @@ rule fix_fasta:
         mem_mb=4000,
         runtime=120,
     script:
-        "scripts/fix_fasta.py"
+        "https://raw.githubusercontent.com/hivlab/discover-virome/master/scripts/fix_fasta.py"
 
 
 rule metator:
     input:
         "reads/{accession}_1.fastq.gz",
         "reads/{accession}_2.fastq.gz",
-        "output/{accession}/final.contigs.fa",
+        "output/{accession}/contigs_fixed.fa",
     output:
         directory("output/{accession}/metator"),
     container:
