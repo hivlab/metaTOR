@@ -51,7 +51,6 @@ rule mag_pipeline:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
-        queue="amd",
         extra="--save_trimmed_fail",
     handover: True
     wrapper:
