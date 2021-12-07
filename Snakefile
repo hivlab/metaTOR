@@ -7,7 +7,7 @@ FASTQ=["SRR13435231"]
 
 localrules: all, sample_sheet
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "Assembly/MEGAHIT/{accession}.contigs.fa.gz", "output/{accession}/metator"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "output/{accession}/metator"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
