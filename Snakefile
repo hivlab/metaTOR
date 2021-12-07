@@ -46,11 +46,13 @@ rule mag_pipeline:
     input:
         input="output/{accession}.csv",
     output:
-        "Assembly/MEGAHIT/{accession}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     params:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
+        queue="amd",
+        extra="--save_trimmed_fail",
     handover: True
     wrapper:
         "https://raw.githubusercontent.com/hivlab/snakemake-wrappers/nf-profile/utils/nextflow"
@@ -60,7 +62,7 @@ rule metator:
     input:
         "reads/{accession}_1.fastq.gz",
         "reads/{accession}_2.fastq.gz",
-        "Assembly/MEGAHIT/{accession}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
         directory("output/{accession}/metator"),
     container:
