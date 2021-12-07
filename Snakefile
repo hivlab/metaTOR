@@ -51,7 +51,7 @@ rule mag_pipeline:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
-        extra="--save_trimmed_fail",
+        extra="--save_trimmed_fail -c cluster.config",
     handover: True
     wrapper:
         "https://raw.githubusercontent.com/hivlab/snakemake-wrappers/nf-profile/utils/nextflow"
