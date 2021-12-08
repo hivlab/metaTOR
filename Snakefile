@@ -47,20 +47,36 @@ rule mag_pipeline:
         input="output/{accession}.csv",
     output:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/{accession}.log",
     params:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
-        extra="--save_trimmed_fail",
     handover: True
     wrapper:
         "https://raw.githubusercontent.com/hivlab/snakemake-wrappers/nf-profile/utils/nextflow"
 
 
+rule trimmed_reads:
+    input: 
+        "results/Assembly/MEGAHIT/{accession}.log"
+    output: 
+        "results/trimmed_reads/{accession}.phix_removed.unmapped_1.fastq.gz",
+        "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
+    shell:
+        """
+        a=($(grep -o "(\/.*phix_removed.unmapped_[1,2].fastq.gz" {input[0]} |\
+        sed "s/(//g" |\
+        awk -F',' '{{ for(i=1;i<=NF;i++) print $i }}'))
+        ln -sr "${{a[0]}}" {output[0]} \
+        && ln -sr "${{a[1]}}" {output[1]}
+        """
+
+
 rule metator:
     input:
-        "reads/{accession}_1.fastq.gz",
-        "reads/{accession}_2.fastq.gz",
+        "results/trimmed_reads/{accession}.phix_removed.unmapped_1.fastq.gz",
+        "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
         directory("output/{accession}/metator"),
