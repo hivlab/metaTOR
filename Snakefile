@@ -7,7 +7,7 @@ FASTQ=["SRR13435231"]
 
 localrules: all, sample_sheet, trimmed_reads
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "output/{accession}/metator"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
@@ -80,6 +80,8 @@ rule metator:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
         directory("results/metator/{accession}"),
+    log:
+        "logs/{accession}.metator.log"
     container:
         "docker://koszullab/metator"
     threads: 8
@@ -88,5 +90,5 @@ rule metator:
         runtime=120,
     shell:
         """
-        metator pipeline -1 {input[0]} -2 {input[1]} -a {input[2]} -o {output} --threads {threads}
+        metator pipeline -1 {input[0]} -2 {input[1]} -a {input[2]} -o {output} --threads {threads} 2> {log}
         """
