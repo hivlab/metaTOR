@@ -79,16 +79,20 @@ rule metator:
         "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
+        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
         directory("results/metator/{accession}"),
     log:
         "logs/{accession}.metator.log"
+    params:
+        extra=""
     container:
         "docker://koszullab/metator"
     threads: 8
     resources:
-        mem_mb=4000,
-        runtime=120,
+        mem_mb=16000,
+        runtime=1440,
     shell:
         """
-        metator pipeline -1 {input[0]} -2 {input[1]} -a {input[2]} -o {output} --threads {threads} 2> {log}
+        zcat {input[2]} > {output[0]} \
+        && metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{output[0]}' --outdir='{output[1]}' --threads={threads} {params.extra} 2> {log}
         """
