@@ -79,7 +79,7 @@ rule metator:
         "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
-        directory("output/{accession}/metator"),
+        directory("results/metator/{accession}"),
     container:
         "docker://koszullab/metator"
     threads: 8
