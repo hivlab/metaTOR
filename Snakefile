@@ -1,13 +1,17 @@
+import os
 from snakemake.utils import min_version
 min_version("6.2")
 
 
-FASTQ=["SRR13435231"]
+report: "report/workflow.rst"
+
+
+FASTQ=["SRR13435231", "SRR13435229"]
 
 
 localrules: all, sample_sheet, trimmed_reads
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}/bin_summary.txt"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
@@ -80,19 +84,20 @@ rule metator:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
     output:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa",
-        directory("results/metator/{accession}"),
+        "results/metator/{accession}/bin_summary.txt",
     log:
         "logs/{accession}.metator.log"
     params:
-        extra=""
+        extra="--force",
+        outdir=lambda wildcards, output: os.path.dirname(output[1]),
     container:
         "docker://koszullab/metator"
     threads: 8
     resources:
-        mem_mb=16000,
-        runtime=1440,
+        mem_mb=44000,
+        runtime=600,
     shell:
         """
         zcat {input[2]} > {output[0]} \
-        && metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{output[0]}' --outdir='{output[1]}' --threads={threads} {params.extra} 2> {log}
+        && metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{output[0]}' --outdir='{params.outdir}' --threads={threads} {params.extra} 2> {log}
         """
