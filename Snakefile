@@ -116,7 +116,7 @@ rule contactmap:
         "logs/{accession}.metator.log"
     params:
         extra="",
-        bin="MetaTOR_4_3",
+        bin="MetaTOR_26_0",
         enzyme="MluCI",
     container:
         "docker://koszullab/metator"
