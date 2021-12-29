@@ -11,7 +11,7 @@ FASTQ=["SRR13435231", "SRR13435229"]
 
 localrules: all, sample_sheet, trimmed_reads
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}/bin_summary.txt"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}/bin_summary.txt", "results/metator/{accession}/contact_map"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
@@ -85,6 +85,8 @@ rule metator:
     output:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa",
         "results/metator/{accession}/bin_summary.txt",
+        "results/metator/{accession}/contig_data_final.txt",
+        "results/metator/{accession}/alignment_0.pairs",
     log:
         "logs/{accession}.metator.log"
     params:
@@ -101,3 +103,29 @@ rule metator:
         zcat {input[2]} > {output[0]} \
         && metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{output[0]}' --outdir='{params.outdir}' --threads={threads} {params.extra} 2> {log}
         """
+
+
+rule contactmap:
+    input:
+        "results/metator/{accession}/contig_data_final.txt",
+        "results/metator/{accession}/alignment_0.pairs",
+        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+    output:
+        directory("results/metator/{accession}/contact_map"),
+    log:
+        "logs/{accession}.metator.log"
+    params:
+        extra="",
+        bin="MetaTOR_4_3",
+        enzyme="MluCI",
+    container:
+        "docker://koszullab/metator"
+    threads: 8
+    resources:
+        mem_mb=44000,
+        runtime=600,
+    shell:
+        """
+        metator contactmap -c {input[0]} -a {input[2]} -e {params.enzyme} -n {params.bin} -p {input[1]} -DfF -s 5000 -o {output[0]} --threads={threads} {params.extra} 2> {log}
+        """
+
