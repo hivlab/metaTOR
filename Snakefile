@@ -9,9 +9,9 @@ report: "report/workflow.rst"
 FASTQ=["SRR13435231", "SRR13435229"]
 
 
-localrules: all, sample_sheet, trimmed_reads
+localrules: all, sample_sheet, trimmed_reads, unzip
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz", "results/metator/{accession}/bin_summary.txt", "results/metator/{accession}/contact_map"], accession=FASTQ)
+    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa", "results/metator/{accession}/bin_summary.txt", "results/virsorter2/{accession}/final-viral-score.tsv", "results/metator/{accession}/contact_map"], accession=FASTQ)
 
 
 rule get_fastq_pe_gz:
@@ -77,13 +77,19 @@ rule trimmed_reads:
         """
 
 
+rule unzip:
+    input: "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz"
+    output: "results/Assembly/MEGAHIT/{accession}.contigs.fa"
+    shell:
+        "zcat {input[0]} > {output[0]}"
+
+
 rule metator:
     input:
         "results/trimmed_reads/{accession}.phix_removed.unmapped_1.fastq.gz",
         "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
-        "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
-    output:
         "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+    output:
         "results/metator/{accession}/bin_summary.txt",
         "results/metator/{accession}/contig_data_final.txt",
         "results/metator/{accession}/alignment_0.pairs",
@@ -91,7 +97,7 @@ rule metator:
         "logs/{accession}.metator.log"
     params:
         extra="--force",
-        outdir=lambda wildcards, output: os.path.dirname(output[1]),
+        outdir=lambda wildcards, output: os.path.dirname(output[0]),
     container:
         "docker://koszullab/metator"
     threads: 8
@@ -100,8 +106,31 @@ rule metator:
         runtime=600,
     shell:
         """
-        zcat {input[2]} > {output[0]} \
-        && metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{output[0]}' --outdir='{params.outdir}' --threads={threads} {params.extra} 2> {log}
+        metator pipeline --forward='{input[0]}' --reverse='{input[1]}' --assembly='{input[2]}' --outdir='{params.outdir}' --threads={threads} {params.extra} 2> {log}
+        """
+
+
+rule virsorter2:
+    input:
+        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+    output:
+        "results/virsorter2/{accession}/final-viral-combined.fa",
+        "results/virsorter2/{accession}/final-viral-score.tsv",
+        "results/virsorter2/{accession}/final-viral-boundary.tsv",
+    log:
+        "logs/{accession}.virsorter2.log"
+    params:
+        extra="--min-score 0.5 --min-length 500",
+        outdir=lambda wildcards, output: os.path.dirname(output[0]),
+    container:
+        "docker://jiarong/virsorter:latest"
+    threads: 4
+    resources:
+        mem_mb=44000,
+        runtime=600,
+    shell:
+        """
+        virsorter run -w {params.outdir} {params.extra} -j {threads} all 2> {log}
         """
 
 
