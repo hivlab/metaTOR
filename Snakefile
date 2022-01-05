@@ -99,7 +99,7 @@ rule metator:
         extra="--force",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
     container:
-        "docker://koszullab/metator"
+        "docker://koszullab/metator:latest"
     threads: 8
     resources:
         mem_mb=44000,
@@ -123,14 +123,14 @@ rule virsorter2:
         extra="--min-score 0.5 --min-length 500",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
     container:
-        "docker://jiarong/virsorter:latest"
+        "docker://jiarong/virsorter:2.2.3"
     threads: 4
     resources:
         mem_mb=44000,
         runtime=600,
     shell:
         """
-        virsorter run -w {params.outdir} {params.extra} -j {threads} all 2> {log}
+        virsorter run -i {input[0]} -w {params.outdir} {params.extra} -j {threads} all 2> {log}
         """
 
 
