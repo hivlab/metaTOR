@@ -44,7 +44,7 @@ rule get_fastq_pe_gz:
 
 rule sample_sheet:
     output:
-        "output/{group}.csv"
+        "results/{group}.csv"
     params:
         group=lambda wildcards: wildcards.group
     run:
@@ -54,7 +54,7 @@ rule sample_sheet:
 
 rule mag_pipeline:
     input:
-        input="output/{group}.csv",
+        input="results/{group}.csv",
     output:
         "results/Assembly/MEGAHIT/{group}.contigs.fa.gz",
         "results/Assembly/MEGAHIT/{group}.log",
