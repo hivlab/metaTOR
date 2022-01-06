@@ -1,0 +1,7 @@
+sample_name,run,short_reads_1,short_reads_2,long_reads
+16016_metaHiC_hpaII,SRR13435231,sra1,sra2,
+8015_metaHiC_hpaII,SRR13435229,sra1,sra2,
+9010,SRR11853877,sra1,sra2,
+9010,SRR11873576,sra1,sra2,
+9010,SRR11873577,sra1,sra2,
+9010,SRR11873578,sra1,sra2,

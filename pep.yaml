@@ -1,0 +1,13 @@
+pep_version: 2.0.0
+sample_table: "samples.csv"
+sample_modifiers:
+  append:
+    long_reads: ""
+  duplicate:
+    sample_name: group
+    run: sample
+  derive:
+    attributes: [short_reads_1, short_reads_2]
+    sources:
+      sra1: "reads/{run}_1.fastq.gz"
+      sra2: "reads/{run}_2.fastq.gz"

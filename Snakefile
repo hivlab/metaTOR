@@ -5,22 +5,33 @@ min_version("6.2")
 
 report: "report/workflow.rst"
 
-
-FASTQ=["SRR13435231", "SRR13435229"]
+pepfile: "pep.yaml"
+RUNS=pep.sample_table["run"].unique()
+GROUPS=list(set(pep.sample_table.index.values))
 
 
 localrules: all, sample_sheet, trimmed_reads, unzip
 rule all:
-    input: expand(["reads/{accession}_1.fastq.gz", "reads/{accession}_2.fastq.gz", "results/Assembly/MEGAHIT/{accession}.contigs.fa", "results/metator/{accession}/bin_summary.txt", "results/virsorter2/{accession}/final-viral-score.tsv", "results/metator/{accession}/contact_map"], accession=FASTQ)
+    input: 
+        expand(
+            ["reads/{run}_1.fastq.gz", 
+            "reads/{run}_2.fastq.gz"], 
+            run=RUNS
+            ),
+        expand(
+            ["output/{group}.csv",
+            "results/Assembly/MEGAHIT/{group}.contigs.fa.gz"],
+            group=GROUPS
+        )
 
 
 rule get_fastq_pe_gz:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        "reads/{accession}_1.fastq.gz",
-        "reads/{accession}_2.fastq.gz",
+        "reads/{run}_1.fastq.gz",
+        "reads/{run}_2.fastq.gz",
     log:
-        "logs/{accession}.gz.log"
+        "logs/{run}.gz.log"
     params:
         extra="--skip-technical"
     threads: 6  # defaults to 6
@@ -32,30 +43,27 @@ rule get_fastq_pe_gz:
 
 
 rule sample_sheet:
-    input:
-        "reads/{accession}_1.fastq.gz",
-        "reads/{accession}_2.fastq.gz",
     output:
-        "output/{accession}.csv"
+        "output/{group}.csv"
     params:
-        acc=lambda wildcards: wildcards.accession
-    shell:
-        """
-        echo 'sample,group,short_reads_1,short_reads_2,long_reads' >> {output}
-        echo '{params.acc},0,{input[0]},{input[1]},' >> {output}
-        """
+        group=lambda wildcards: wildcards.group
+    run:
+        df=pep.sample_table.loc[params.group, ["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
+        df.to_csv(output[0], index=False)
 
 
 rule mag_pipeline:
     input:
-        input="output/{accession}.csv",
+        input="output/{group}.csv",
     output:
-        "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz",
-        "results/Assembly/MEGAHIT/{accession}.log",
+        "results/Assembly/MEGAHIT/{group}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/{group}.log",
     params:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
+        min_contig_size=1000,
+        coassemble_group=True,
     handover: True
     wrapper:
         "https://raw.githubusercontent.com/hivlab/snakemake-wrappers/nf-profile/utils/nextflow"
@@ -63,10 +71,10 @@ rule mag_pipeline:
 
 rule trimmed_reads:
     input: 
-        "results/Assembly/MEGAHIT/{accession}.log"
+        "results/Assembly/MEGAHIT/{group}.log"
     output: 
-        "results/trimmed_reads/{accession}.phix_removed.unmapped_1.fastq.gz",
-        "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
+        ("results/trimmed_reads/{run}.phix_removed.unmapped_1.fastq.gz",
+        "results/trimmed_reads/{run}.phix_removed.unmapped_2.fastq.gz"),
     shell:
         """
         a=($(grep -o "(\/.*phix_removed.unmapped_[1,2].fastq.gz" {input[0]} |\
@@ -78,23 +86,23 @@ rule trimmed_reads:
 
 
 rule unzip:
-    input: "results/Assembly/MEGAHIT/{accession}.contigs.fa.gz"
-    output: "results/Assembly/MEGAHIT/{accession}.contigs.fa"
+    input: "results/Assembly/MEGAHIT/{run}.contigs.fa.gz"
+    output: "results/Assembly/MEGAHIT/{run}.contigs.fa"
     shell:
         "zcat {input[0]} > {output[0]}"
 
 
 rule metator:
     input:
-        "results/trimmed_reads/{accession}.phix_removed.unmapped_1.fastq.gz",
-        "results/trimmed_reads/{accession}.phix_removed.unmapped_2.fastq.gz",
-        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+        "results/trimmed_reads/{run}.phix_removed.unmapped_1.fastq.gz",
+        "results/trimmed_reads/{run}.phix_removed.unmapped_2.fastq.gz",
+        "results/Assembly/MEGAHIT/{run}.contigs.fa",
     output:
-        "results/metator/{accession}/bin_summary.txt",
-        "results/metator/{accession}/contig_data_final.txt",
-        "results/metator/{accession}/alignment_0.pairs",
+        "results/metator/{run}/bin_summary.txt",
+        "results/metator/{run}/contig_data_final.txt",
+        "results/metator/{run}/alignment_0.pairs",
     log:
-        "logs/{accession}.metator.log"
+        "logs/{run}.metator.log"
     params:
         extra="--force",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
@@ -112,13 +120,13 @@ rule metator:
 
 rule virsorter2:
     input:
-        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+        "results/Assembly/MEGAHIT/{run}.contigs.fa",
     output:
-        "results/virsorter2/{accession}/final-viral-combined.fa",
-        "results/virsorter2/{accession}/final-viral-score.tsv",
-        "results/virsorter2/{accession}/final-viral-boundary.tsv",
+        "results/virsorter2/{run}/final-viral-combined.fa",
+        "results/virsorter2/{run}/final-viral-score.tsv",
+        "results/virsorter2/{run}/final-viral-boundary.tsv",
     log:
-        "logs/{accession}.virsorter2.log"
+        "logs/{run}.virsorter2.log"
     params:
         extra="--min-score 0.5 --min-length 500",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
@@ -136,13 +144,13 @@ rule virsorter2:
 
 rule contactmap:
     input:
-        "results/metator/{accession}/contig_data_final.txt",
-        "results/metator/{accession}/alignment_0.pairs",
-        "results/Assembly/MEGAHIT/{accession}.contigs.fa",
+        "results/metator/{run}/contig_data_final.txt",
+        "results/metator/{run}/alignment_0.pairs",
+        "results/Assembly/MEGAHIT/{run}.contigs.fa",
     output:
-        directory("results/metator/{accession}/contact_map"),
+        directory("results/metator/{run}/contact_map"),
     log:
-        "logs/{accession}.metator.log"
+        "logs/{run}.metator.log"
     params:
         extra="",
         bin="MetaTOR_26_0",
