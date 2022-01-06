@@ -19,7 +19,7 @@ rule all:
             accession=RUNS
             ),
         expand(
-            ["output/{group}.csv",
+            ["results/{group}.csv",
             "results/Assembly/MEGAHIT/{group}.contigs.fa.gz"],
             group=GROUPS
         )
