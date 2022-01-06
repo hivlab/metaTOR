@@ -14,9 +14,9 @@ localrules: all, sample_sheet, trimmed_reads, unzip
 rule all:
     input: 
         expand(
-            ["reads/{run}_1.fastq.gz", 
-            "reads/{run}_2.fastq.gz"], 
-            run=RUNS
+            ["reads/{accession}_1.fastq.gz", 
+            "reads/{accession}_2.fastq.gz"], 
+            accession=RUNS
             ),
         expand(
             ["output/{group}.csv",
@@ -28,10 +28,10 @@ rule all:
 rule get_fastq_pe_gz:
     output:
         # the wildcard name must be accession, pointing to an SRA number
-        "reads/{run}_1.fastq.gz",
-        "reads/{run}_2.fastq.gz",
+        "reads/{accession}_1.fastq.gz",
+        "reads/{accession}_2.fastq.gz",
     log:
-        "logs/{run}.gz.log"
+        "logs/{accession}.fasterq-dump.log"
     params:
         extra="--skip-technical"
     threads: 6  # defaults to 6
