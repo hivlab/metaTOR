@@ -43,6 +43,8 @@ rule get_fastq_pe_gz:
 
 
 rule sample_sheet:
+    input:
+        lambda wildcards: expand("reads/{accession}_{pair}.fastq.gz", accession=pep.sample_table.loc[[wildcards.group], "run"].tolist(), pair=[1,2])
     output:
         "results/{group}.csv"
     params:
@@ -73,8 +75,8 @@ rule trimmed_reads:
     input: 
         "results/Assembly/MEGAHIT/{group}.log"
     output: 
-        ("results/trimmed_reads/{run}.phix_removed.unmapped_1.fastq.gz",
-        "results/trimmed_reads/{run}.phix_removed.unmapped_2.fastq.gz"),
+        "results/trimmed_reads/{run}.phix_removed.unmapped_1.fastq.gz",
+        "results/trimmed_reads/{run}.phix_removed.unmapped_2.fastq.gz",
     shell:
         """
         a=($(grep -o "(\/.*phix_removed.unmapped_[1,2].fastq.gz" {input[0]} |\
