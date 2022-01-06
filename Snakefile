@@ -48,7 +48,7 @@ rule sample_sheet:
     params:
         group=lambda wildcards: wildcards.group
     run:
-        df=pep.sample_table.loc[params.group, ["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
+        df=pep.sample_table.loc[[params.group], ["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
         df.to_csv(output[0], index=False)
 
 
