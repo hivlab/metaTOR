@@ -36,7 +36,7 @@ rule get_fastq_pe_gz:
         extra="--skip-technical"
     threads: 6  # defaults to 6
     resources:
-        mem_mb=lambda wildcards, attempt: attempt * 4000,
+        mem_mb=lambda wildcards, attempt: attempt * 24000,
         runtime=120,
     wrapper:
         "0.80.2/bio/sra-tools/fasterq-dump"
