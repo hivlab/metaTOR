@@ -64,7 +64,7 @@ rule mag_pipeline:
         pipeline="nf-core/mag",
         revision="2.1.1",
         profile=["singularity"],
-        min_contig_size=1000,
+        min_contig_size=1500, # less than 1500 throws an error during binning
         coassemble_group=True,
     handover: True
     wrapper:
