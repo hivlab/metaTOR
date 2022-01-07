@@ -19,8 +19,7 @@ rule all:
             accession=RUNS
             ),
         expand(
-            ["results/{group}.csv",
-            "results/Assembly/MEGAHIT/{group}.contigs.fa.gz"],
+            ["results/Assembly/MEGAHIT/{group}.contigs.fa.gz"],
             group=GROUPS
         )
 
@@ -44,22 +43,22 @@ rule get_fastq_pe_gz:
 
 rule sample_sheet:
     input:
-        lambda wildcards: expand("reads/{accession}_{pair}.fastq.gz", accession=pep.sample_table.loc[[wildcards.group], "run"].tolist(), pair=[1,2])
+        lambda wildcards: expand("reads/{accession}_{pair}.fastq.gz", accession=RUNS, pair=[1,2])
     output:
-        "results/{group}.csv"
-    params:
-        group=lambda wildcards: wildcards.group
+        temp("results/samplesheet.csv")
     run:
-        df=pep.sample_table.loc[[params.group], ["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
+        df=pep.sample_table.loc[["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
         df.to_csv(output[0], index=False)
 
 
 rule mag_pipeline:
     input:
-        input="results/{group}.csv",
+        input="results/samplesheet.csv",
     output:
-        "results/Assembly/MEGAHIT/{group}.contigs.fa.gz",
-        "results/Assembly/MEGAHIT/{group}.log",
+        expand(["results/Assembly/MEGAHIT/{group}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/{group}.log"], group=GROUPS),
+    log:
+        "logs/mag_pipeline.log"
     params:
         pipeline="nf-core/mag",
         revision="2.1.1",
