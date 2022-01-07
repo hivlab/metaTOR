@@ -47,7 +47,7 @@ rule sample_sheet:
     output:
         temp("results/samplesheet.csv")
     run:
-        df=pep.sample_table.loc[["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
+        df=pep.sample_table[["sample", "group", "short_reads_1", "short_reads_2", "long_reads"]]
         df.to_csv(output[0], index=False)
 
 
