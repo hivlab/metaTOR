@@ -55,8 +55,8 @@ rule mag_pipeline:
     input:
         input="results/samplesheet.csv",
     output:
-        expand(["results/Assembly/MEGAHIT/{group}.contigs.fa.gz",
-        "results/Assembly/MEGAHIT/{group}.log"], group=GROUPS),
+        expand(["results/Assembly/MEGAHIT/group-{group}.contigs.fa.gz",
+        "results/Assembly/MEGAHIT/group-{group}.log"], group=GROUPS),
     log:
         "logs/mag_pipeline.log"
     params:
